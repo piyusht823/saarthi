@@ -1,0 +1,771 @@
+<!-- <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css"> -->
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    function preLoaderHandler(){
+      $('.pre_loader').hide();
+    }
+  </script>
+  <!-- <script src="js/login.js"></script> 
+  <script src="js/device.js"></script> -->
+  
+  <title>Patient Dashboard</title>
+  
+  <link rel="apple-touch-icon" sizes="180x180" href="../../assets/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../../assets/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../../assets/favicon/favicon-16x16.png">
+  <link rel="manifest" href="../../assets/favicon/site.webmanifest">
+
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/device-list.css">
+  <link rel="stylesheet" href="css/chat.css">
+  <link rel="stylesheet" href="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.css" />
+  <!-- Boxicons CDN Link -->
+  <link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   
+  
+<!-- <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>		 -->
+
+<!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous"> -->
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css"
+integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css"
+href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
+<script type="text/javascript"
+  src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.js"></script>
+
+
+
+  
+  <!-- For sensor data -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script>
+		$(document).ready(function(){
+			setInterval(function(){
+				$.getJSON("https://api.thingspeak.com/channels/2097681/feeds.json?api_key=560COUKPDOZBRVE1&results=2", function(data){
+					var temperature = data.feeds[0].field1;
+					var pulse = data.feeds[0].field2;
+					var systolic_bp = data.feeds[0].field3;
+					var diastolic_bp = data.feeds[0].field4;
+					var pulse_bp = data.feeds[0].field5;
+          var rRate = pulse/5;
+
+          if(temperature > 39){
+            // generate warning message
+            var message = "Your body temperature is too high. Please consult a doctor immediately.";
+            var msg = new SpeechSynthesisUtterance(message);
+            window.speechSynthesis.speak(msg);
+          }
+
+
+
+					$("#temperature").text(temperature);
+					$("#pulse").text(pulse);
+					$("#systolic_bp").text(systolic_bp);
+					$("#diastolic_bp").text(diastolic_bp);
+					$("#pulse_bp").text(pulse_bp);
+          $("#rRate").text(rRate);
+				});
+			}, 5000);
+		});
+	</script>
+
+  
+</head>
+
+<body>
+  <div class ="pre_loader">
+
+  </div>
+
+  <div class="node-dev pop-up" style="display: none!important;">
+
+   <div class="key-setting box" style="">
+    <div class="close">
+      <span class="dev-head">HealthConnect Devices</span>
+      <span class="close-icon" onclick="close_key()">✖</span>  
+    </div>
+    <div class="box-content">
+      <h2>Secret Key</h2>
+      <div class="value">
+        <code class="key-value">( Refresh Page )</code>
+        <span class="copy" onclick="copyToClipboard('.key-value')">📋</span>
+      </div>
+
+     
+      <div class="submit-key">
+          <input placeholder="Password" class="key-pass" type="password">
+          <button class="new_key" onclick="gen_newkey()">Generate New Key</button>
+          <span> Please reset your secret key regularly</span>
+      </div>
+      
+    </div>
+
+ </div>
+
+ <div class="dev-create box" style="">
+    
+  <div class="close">
+    <span class="dev-head">HealthConnect Devices</span><span class="close-icon" onclick="close_key()">✖</span>
+  </div>
+
+  <div class="box-content">
+    <div class="device-drop">
+      <div class="device-type">
+        <h2>Device Type</h2>
+                <label for="lang"></label>
+                  <select required="" type="text" name="dev-category" class="field-style field-split align-left" placeholder="Dev Category" id="dev-category" style="font-size: 15px;">
+                    <option value="" disabled="" selected="">Category</option>
+                    <option value="Central">Central</option>
+                    <option value="Temperature">Temperature</option>
+                    <option value="HeartBeat">HeartBeat</option><option value="Pulse">Pulse</option>
+                    <option value="Respiration">Respiration</option>
+                  </select>
+      </div>
+      <div class="hardware">
+          <h2>Hardware</h2>
+                <label for="lang"></label>
+                  <select required="" type="text" name="hw-category" class="field-style field-split align-left" placeholder="Hardware Category" id="hw-category" style="font-size: 15px;">
+                    <option value="" disabled="" selected="">Category</option>
+                    <option value="ESP32">ESP32 Dev Board</option>
+                    <option value="ESP8266">ESP8266 NodeMCU</option>
+                    <option value="android">Android App</option>
+                    <option value="cli">Terminal</option>
+                  </select>
+      </div>
+      </div>
+    <div class="device-checkb">
+      <h2>Medical Components</h2>
+        <div class="med-comp">
+        <div class="med-comp-c">
+          <label>All <input type="checkbox" value="all" name="comp" onclick="disable_rest()"></label>
+          <label>Temperature <input type="checkbox" value="temp" name="comp"></label>
+          <label>Systolic Blood Pressure <input type="checkbox" value="sbp" name="comp"></label>
+        </div>
+        <div class="med-comp-c">
+          <label>Diabolic Blood Pressure <input type="checkbox" value="dbp" name="comp"></label>
+          <label>Oxygen Saturation <input type="checkbox" value="spo2" name="comp"></label>
+          <label>Inspired Oxygen <input type="checkbox" value="fio2" name="comp"></label>
+        </div>
+      </div>
+    </div>
+  <div class="submit-key">
+    <button class="new_node" onclick="create_node()">Create New Device</button>
+  
+  <span>Click <a href="#">here</a> for Documentation on <b>How to Send Data</b></span></div>
+
+</div>
+  
+</div>
+
+</div>
+   
+  <div class="container" id="blur">
+    <div class="sidebar">
+      <div class="logo-details">
+        <i class="bx bx-donate-heart"></i>
+        <span class="logo_name">Saarthi</span>
+      </div>
+      <ul class="nav-links">
+        <li class="dash content active">
+          <i class="bx bx-grid-alt"></i>
+          <span class="links_name">Patient Dashboard</span>
+        </li>
+        <li class="chat content">
+          <i class="bx bx-chat"></i>
+          <span class="links_name">Chat with Doctor</span>
+        </li>
+        <li class="diagnosis content">
+            <i class="bx bx-line-chart"></i>
+            <span class="links_name">Diagnosis</span>
+        </li>
+        
+        <li class="device content">
+            <i class="bx bx-add-to-queue"></i>
+            <span class="links_name">Medical Devices</span>
+        </li>
+        <li class="treatment content">
+            <i class="bx bxs-capsule"></i>
+            <span class="links_name">Treatment</span>
+        </li>
+        <li class="schedule content">
+            <i class="bx bx-calendar"></i>
+            <span class="links_name">My Schedule</span>
+        </li>
+        <li class="helpline content">
+            <i class="bx bxs-phone-call"></i>
+            <span class="links_name">Healthcare Visit</span>
+        </li>
+        <li class="symptom-bot content">
+            <i class="bx bxs-bot "></i>
+            <span class="links_name">Symptoms ChatBot</span>
+          
+        </li>
+        <li class="log_out">
+		<i class="bx bx-log-out"></i>
+		<span class="links_name">Log out</span>
+        </li>
+      </ul>
+    </div>
+    <section class="home-section">
+      <nav>
+        <div class="sidebar-button">
+          <i class='bx bx-menu sidebarBtn'></i>
+          <span class="dashboard">Dashboard</span>
+        </div>
+        <div class="search-box">
+          <input type="text" placeholder="Search...">
+          <i class='bx bx-search'></i>
+        </div>
+        <div class="profile-details">
+         <img src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="DP"> 
+          <span class="admin_name username"></span>
+          <i class='bx bx-chevron-up'></i>
+
+          <div class="section-dropdown"> 
+ 
+                <a class="sd-list" href="../account/">Account</a>
+                <a class="sd-list" href="../documentation/">Documentation</a>
+                <a class="sd-list" href="../premium/">Premium</a>
+                <a class="sd-list" href="../preference/">Preference</a>
+      
+          </div>
+
+        </div>
+      </nav>
+
+
+
+      <div class="box-content dashboard active">
+        <div class="overview-boxes">
+          
+          <div class="box">
+            <div class="right-side">
+              <div class="box-topic">Temperature: <span id="temperature" style="font-size: large;"></span></div>
+              <div class="number temp"></div>
+              <div class="indicator">
+                <span class="text">Safe up to 37.2 °C</span>
+              </div>
+            </div>
+            <i class="fa-solid fa-temperature-half cart "></i>
+          </div>
+          <div class="box">
+            <div class="right-side">
+              <div class="box-topic">HeartRate: <span id="pulse" style="font-size: large;"></span></div>
+              <div class="number heartrate"></div>
+              <div class="indicator">
+                <span class="text">Safe [60 to 100 beats]</span>
+              </div>
+            </div>
+            <i class="fas fa-heartbeat cart four"></i>
+          </div>
+          <div class="box">
+            <div class="right-side">
+              <div class="box-topic">Diastole BP: <span id="diastolic_bp" style="font-size: large;"></span> </div>
+              <div class="number dbp"></div>
+              <div class="indicator">
+                <span class="text">Safe [60 - 80 mm Hg]</span>
+              </div>
+            </div>
+            <i class="fas fa-heart cart two"></i>
+          </div>
+         
+          <div class="box">
+            <div class="right-side">
+              <div class="box-topic">Systole BP: <span id="systolic_bp" style="font-size: large;"></span></div>
+              <div class="number sbp"></div>
+              <div class="indicator">
+                <span class="text">Safe [90 - 120 mm Hg]</span>
+              </div>
+            </div>
+            <i class="fas fa-heart cart three"></i>
+          </div>
+          
+          <div class="box">
+            <div class="right-side">
+              <div class="box-topic">Pulse BP: <span id="pulse_bp" style="font-size: large;"></span></div>
+              <div class="number pulse"></div>
+              <div class="indicator">
+                <span class="text"> Safe up to 115 </span>
+              </div>
+            </div>
+            <i class="fas fa-heart cart four" ></i>
+          </div>
+          <div class="box">
+            <div class="right-side">
+              <div class="box-topic">Respiration Rate: <span id="rRate" style="font-size: large;"></span></div>
+              <div class="number respiration"></div>
+              <div class="indicator">
+                <span class="text">Safe [12 to 22 breaths/min]</span>
+              </div>
+            </div>
+            <i class="fas fa-lungs cart two"></i>
+          </div>
+          <div class="box">
+            <div class="right-side">
+              <div class="box-topic">SpO2</div>
+              <div class="number spo2"></div>
+              <div class="indicator">
+                <span class="text">Range [95% or higher]</span>
+              </div>
+            </div>
+            <i class="fas fa-wind cart three"></i>
+          </div>
+          <div class="box">
+            <div class="right-side">
+              <div class="box-topic">Blood Group: O+</div>
+              <div class="number bloodg"></div>
+              <div class="indicator">
+                <span class="text"></span>
+              </div>
+            </div>
+            <i class="fas fa-droplet cart four"></i>
+          </div>
+         
+        </div>
+      </div>
+
+
+
+      <!-------------------------------chat---------------------------------------->
+      <div class="chat dashboard" style="background-color: gray; margin-bottom: 0%;">
+        <div class="container-fluid h-100">
+          <div class="row justify-content-center h-100">
+              <div class="col-md-4 col-xl-3 chat">
+      
+              </div>
+              <div class="col-md-8 col-xl-6 chat">
+                      <div class="card-header msg_head">
+                          <div class="d-flex bd-highlight">
+                              <div class="img_cont">
+                                  <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg"
+                                       class="rounded-circle user_img">
+                                  <span class="online_icon"></span>
+                              </div>
+                              <div class="user_info">
+                                  <span>Chat</span>
+                              </div>
+                              <div class="video_cam">
+                                  <span><i id="#" class="fas fa-video"></i></span>
+                              </div>
+                          </div>
+                          <span id="action_menu_btn"><i class="fas fa-ellipsis-v"></i></span>
+                          <div class="action_menu">
+                              <ul>
+                                  <li><i class="fas fa-user-circle"></i> View profile</li>
+                                  <li><i class="fas fa-users"></i> Add to close friends</li>
+                                  <li><i class="fas fa-plus"></i> Add to group</li>
+                                  <li><i class="fas fa-ban"></i> Block</li>
+                              </ul>
+                          </div>
+                      </div>
+                      <div class="card-body msg_card_body" id="bodyContent">
+      
+      
+                      </div>
+                      <div class="card-footer">
+                          <div class="input-group" style="width: 100px;">
+                              <div class="input-group-append" style="width: 80px;">
+                                  <span class="input-group-text attach_btn"><i class="fas fa-paperclip"></i></span>
+                              </div>
+                              <textarea name="message" id="message" class="form-control type_msg"
+                                        placeholder="Type your message..." ></textarea>
+                              <div class="input-group-append">
+                                  <button id="submit" class="input-group-text send_btn"><i class="fas fa-location-arrow"></i>
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+              </div>
+          </div>
+      </div>
+      </div>
+
+
+      <!------------------------------------------------------------------ -->
+
+
+
+
+      <div class="symptom-bot dashboard">
+
+        <iframe style="height: 100%; width: 100%; border: none;" src="https://health-connect-chat-bot.vercel.app/"></iframe> 
+
+      </div>
+
+
+
+
+      <!----------------------------------------------------------------------->
+
+
+
+
+	    
+	    <div class="diagnosis dashboard">
+        <div class="diagnosis-boxes">
+          <div class="graphout box">
+              <div class="ecg-heart">
+                <div id="ecg-graph" class="graph"></div>
+              </div>
+              <div id="ECG-data-info" class="graph-info">
+                <div id="sys-heart-info" class="graph-info"><span>Systolic BP</span><text class="dash-info-data sbp" style="font-size:85px;"></text></div>
+                <div id="dia-heart-info" class="graph-info"><span>Diabolic BP</span><text class="dash-info-data dbp" style="font-size:85px;"></text></div>
+              </div>
+          </div>   
+           
+          <div class="graphout box">
+            <div class="spo2-graph">
+              <div id="spo2-graph" class="graph"></div>
+            </div>
+            <div id="spo2-info" class="graph-info"><span>SpO₂ Graph</span><text class="dash-info-data spo2"></text></div>
+          </div>   
+          <div class="graphout box">
+            <div class="resp-graph">
+              <div id="resp-graph" class="graph"></div>
+            </div>
+            <div id="resp-info" class="graph-info"><span>Respiration Graph</span><text class="dash-info-data respiration"></text></div>
+          </div>   
+        </div>  
+	    </div>
+
+
+
+      
+      <!----------------------------------------------------------------------->
+
+
+
+
+
+      <div class="med-device dashboard">
+        <div class="device-boxes">
+          <div class="dev-nav box">
+            <div class="dev-search">
+                            <input type="text" onkeyup="node_search()" placeholder="Search for Category" class="s-inpt">
+                            <label for="lang"></label>
+                            <select required="" type="text" name="dev-filter" class="field-style field-split align-left" placeholder="Dev Filter" id="dev-filter" style="font-size: 15px;">
+                              <option value="" disabled="" selected="">Category</option>
+                              <option value="1">Health Device</option>
+                              <option value="2">Device ID</option>
+                              <option value="3">Value Attibutes</option>
+                              <option value="4">Status</option>
+                            </select>
+            </div>
+            <div class="s-btn">
+              <button class="s-btn-func" onclick="view_node_modal()">Add Device</button>
+              <button class="s-btn-func" onclick="view_key_modal()">Secret Key</button>
+            </div> 
+          </div>
+          <div class="dev-list box">
+        
+            <ul id="myUL">
+              <div class="limiter">
+                <div class="container-table100">
+                  <div class="wrap-table100">
+                    <div class="table100">
+                      <table id="dev-table">
+                        <thead>
+                            <tr class="table100-head">
+                              <th class="">Last Update</th>
+                              <th class="">Health Device</th>
+                              <th class="">Device ID</th>
+                              <th class="">Value Attributes</th>
+                              <th class="">Status</th>
+                              <th class="">Add/Reset</th>
+                              <th class="">Remove</th>
+                            </tr>
+                        </thead>
+                        <tbody id = "dev-table-body">
+                        
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  </div>
+                </div>
+                   
+            </ul>
+            
+          </div>
+          <!-- <div class="dev-list-sort">qwadadas</div> -->
+        </div>
+
+        <div class="no-device">No Device yet? Create a New Device now 🚀</div>
+
+      </div>
+
+
+      <!----------------------------------------------------------------------->
+
+
+      <div class="scheduler dashboard">
+        <div id="calendar" class="calendar-box"></div>
+      </div>
+
+
+      <!----------------------------------------------------------------------->
+
+      <div class="treatment dashboard">
+        <div class="treat-list box">
+        
+          <ul id="myUL">
+            <div class="limiter">
+              <div class="container-table100">
+                <div class="wrap-table100">
+                  <div class="table100">
+                    <table id="treat-table">
+                      <thead>
+                          <tr class="table100-head">
+                          <th class="">Date</th>
+                          <th class="">Doctor</th>
+                          <th class="">Category</th>
+                          <th class="">Medical Description</th>
+                          <th class="">Status</th>
+                          <th class="">Report</th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td class="">2022-09-29</td>
+                          <td class="">Dr. Vignesh Kumar</td>
+                          <td class="">Orthopedic</td>
+                          <td class="">Arthroscopy, right knee, with partial medial meniscectomy and partial lateral meniscectomy</td>
+                          <td class="" >Updated</td>
+                          <td ><button class="treat-table-btn">Download</button></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                </div>
+              </div>
+                 
+          </ul>
+          
+        </div>
+      </div>
+
+      <!----------------------------------------------------------------------->
+
+      <div class="helpline dashboard">
+
+        <div class="number-boxes">
+          <div class="left num-list">
+            <div class="num box">
+              <h2>Emergency</h2>
+              <span><b>9 AM - 8PM </b> -> +910000000000</span>
+              <span><b>9 PM - 8AM </b> -> +910000000000</span>
+            </div>  
+            <div class="num box">
+              <h2>Check Appointments</h2>
+              <span><b>General</b> -> +910000000000</span>
+              <span><b>Urgent</b> -> +910000000000</span>
+            </div>
+            <div class="num box">
+              <h2>Nearest Hospital Reception</h2>
+              <span><b>ABC, XYZ</b> -> +910000000000</span>
+              <span><b>DEF, LMN</b> -> +910000000000</span>
+            </div>
+            <div class="num box">
+              <h2>FAQs on HealthConnect</h2>
+              <li><a href="#">Why HealthConnect?</a></li>
+              <li><a href="#">Which device works wth HealthConnect?</a></li>
+              <li><a href="#">How to connect device?</a></li>
+            </div>
+          </div>
+          <div class="right num-list">
+            <div class="num box" style="align-items: stretch;">
+              <h2>Make Appointment Today!</h2>
+              <form action="https://formbold.com/s/oYJb6" method="POST" class="form-style-9">
+                <ul>
+                <li>
+                  <input type="text" name="name" class="field-style field-split align-left" placeholder="Name">
+                  <input type="email" name="email" class="field-style field-split align-right" placeholder="Email">
+  
+                </li>
+                <li>
+                  <input type="text" name="phone" class="field-style field-split align-left" placeholder="Phone">
+                  <input type="location" name="location" class="field-style field-split align-right" placeholder="Pickup Location">
+                </li>
+                <li>
+                  <style>
+                    
+                      select:required:invalid {
+                        color: rgb(142, 142, 142);
+                      }
+                      input:required:invalid {
+                        color: rgb(142, 142, 142);
+                      }
+                      option[value=""][disabled] {
+                        display: none;
+                      }
+                      option {
+                        color: #000;
+                      }
+                    
+                  </style>
+                  <label for="lang"></label>
+                    <select required="" type="text" name="category" class="field-style field-split align-left" placeholder="Medical Category" id="lang" style="font-size: 13px;">
+                      <option value="" disabled="" selected="">Category</option>
+                      <option value="Orthopedics">Orthopedics</option>
+                      <option value="Internal Medicine">Internal Medicine</option>
+                      <option value="Gynecology">Gynecology</option>
+                      <option value="Dermatology">Dermatology</option>
+                      <option value="Pediatrics">Pediatrics</option>
+                      <option value="Radiology">Radiology</option>
+                      <option value="Family Medicine">Family Medicine</option>
+                      <option value="ENT">ENT</option>
+                      <option value="Anesthesia">Anesthesia</option>
+                    </select>
+                              
+                    <label for="meeting-time"></label>
+
+                    <input class="field-style field-split align-right" type="datetime-local" id="meeting-time" name="time" value="" min="" max="" required="">
+              </li>
+  
+                <li>
+                <input type="submit" value="Send Message">
+                </li>
+                </ul>
+                </form>
+            </div>  
+            <div class="num box">
+              <h2>Locate Nearby Hospitals</h2>
+              <div class="map">
+                
+                <iframe id="hospital-map" width="450" height="400" frameborder="0" style="border:0; height: 100%;" referrerpolicy="no-referrer-when-downgrade" src="" allowfullscreen="">
+            </iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+
+    </section>
+</div>
+
+    <script src="https://kit.fontawesome.com/1ed7106697.js" crossorigin="anonymous"></script>
+	    <script src="js/index.js"></script>
+      <script src="js/nav.js"></script>
+      <script src="js/sidebar.js"></script>
+      <script src="js/diagnosis.js"></script>
+      <script src="js/device.js"></script>
+      <script src="https://uicdn.toast.com/calendar/latest/toastui-calendar.ie11.min.js"></script>
+      <script src="js/calender.js"></script>
+      <script src="js/mqtt.js" type="text/javascript"></script>
+    <!--===============================================================================================-->
+	
+
+
+
+    <!-- Chat  -->
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import {initializeApp} from "https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js";
+      import {
+          getDatabase,
+          set,
+          ref,
+          push,
+          child,
+          onValue,
+          onChildAdded
+      } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js";
+  
+  
+      // TODO: Add SDKs for Firebase products that you want to use
+      // https://firebase.google.com/docs/web/setup#available-libraries
+  
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyAsASPgqo8SybthE1kdO7nM8vwNBo3wF1A",
+        databaseURL: "https://saarthi-24d20-default-rtdb.firebaseio.com/",
+	  authDomain: "saarthi-24d20.firebaseapp.com",
+	  projectId: "saarthi-24d20",
+	  storageBucket: "saarthi-24d20.appspot.com",
+	  messagingSenderId: "841303882340",
+	  appId: "1:841303882340:web:1ba3b3e58a408f55a17d71",
+	  measurementId: "G-M6G0B849L4"
+    };
+  
+  
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
+  
+      var myName = prompt("Enter your name");
+  
+      submit.addEventListener('click', (e) => {
+          var message = document.getElementById('message').value;
+          var name = myName;
+  
+          const id = push(child(ref(database), 'messages')).key;
+  
+          set(ref(database, 'messages/' + id), {
+              name: name,
+              message: message
+          });
+          document.getElementById('message').value = "";
+          // alert('message has sent');
+  
+      });
+  
+      const newMsg = ref(database, 'messages/');
+      onChildAdded(newMsg, (data) => {
+          if(data.val().name != myName) {
+              var divData = '<div class="d-flex justify-content-start mb-4" id="fromDiv">\n' +
+                  '                        <div class="img_cont_msg">\n' +
+                  '                            <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg"\n' +
+                  '                                 class="rounded-circle user_img_msg">\n' +
+                  '                        </div>\n' +
+                  '                        <div class="msg_cotainer" >\n' +
+                  '                            '+data.val().message+'' +
+                  '                            <span class="msg_time"></span>\n' +
+                  '                        </div>\n' +
+                  '                    </div>';
+              var d1 = document.getElementById('bodyContent');
+              d1.insertAdjacentHTML('beforebegin', divData);
+          }else{
+              var divData = '<div class="d-flex justify-content-end mb-4">\n' +
+                  '                        <div class="msg_cotainer_send" id="sendDiv">\n' +
+                  '                            '+data.val().message+'' +
+                  '                        </div>\n' +
+                  '                        <div class="img_cont_msg">\n' +
+                  '                            <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg"\n' + '                                 class="rounded-circle user_img_msg">\n' +   
+                  '                        </div>\n' +
+                  '                    </div>';
+              var d1 = document.getElementById('bodyContent');
+              d1.insertAdjacentHTML('beforebegin', divData);
+          }
+      });
+  
+  
+  
+  </script>
+  
+  <script>
+      $(document).ready(function () {
+          $('#action_menu_btn').click(function () {
+              $('.action_menu').toggle();
+          });
+      });
+  </script>
+
+
+</body>
+
+</html>
+<!-- -->
